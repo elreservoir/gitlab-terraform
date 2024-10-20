@@ -11,7 +11,7 @@ resource "gitlab_user_runner" "instance-runner" {
  * Docker Swarm Project
  */
 
-resource "gitlab_project" "docker-swarm" {
+resource "gitlab_project" "swarm" {
   name = "Docker Swarm"
   namespace_id = gitlab_group.homelab.id
   description = "Docker Swarm Compose Files"
@@ -30,40 +30,40 @@ resource "gitlab_project" "docker-swarm" {
   }
 }
 
-data "github_repository" "github-homelab" {
+data "github_repository" "github-swarm" {
   name = "docker-swarm"
 }
 
-resource "null_resource" "import_github_to_gitlab" {
+resource "null_resource" "import-swarm" {
   triggers = {
-    gitlab_project_id = gitlab_project.docker-swarm.id
+    gitlab_project_id = gitlab_project.swarm.id
   }
 
   provisioner "local-exec" {
     command = <<-EOT
-      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-homelab.http_clone_url, "https://")} temp_repo
-      cd temp_repo
-      git remote add gitlab https://${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_USERNAME"]}:${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_TOKEN"]}@${trimprefix(gitlab_project.docker-swarm.http_url_to_repo, "https://")}
+      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-swarm.http_clone_url, "https://")} swarm_repo
+      cd swarm_repo
+      git remote add gitlab https://${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_USERNAME"]}:${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_TOKEN"]}@${trimprefix(gitlab_project.swarm.http_url_to_repo, "https://")}
       git push -u gitlab --all
-      rm -rf ../temp_repo
+      rm -rf ../swarm_repo
     EOT
   }
 }
 
 resource "gitlab_project_mirror" "swarm-mirror" {
-  project = gitlab_project.docker-swarm.id
-  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-homelab.http_clone_url, "https://")}"
+  project = gitlab_project.swarm.id
+  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-swarm.http_clone_url, "https://")}"
   enabled = true
 }
 
 resource "gitlab_project_membership" "swarm-renovate" {
-  project = gitlab_project.docker-swarm.id
+  project = gitlab_project.swarm.id
   user_id = gitlab_user.renovate-bot.id
   access_level = "developer"
 }
 
 resource "gitlab_project_hook" "swarm-renovatehook" {
-  project = gitlab_project.docker-swarm.id
+  project = gitlab_project.swarm.id
   url = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_URL"]
   token = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_TOKEN"]
   push_events = false
@@ -78,14 +78,12 @@ resource "gitlab_project_hook" "swarm-renovatehook" {
  */
 
 resource "gitlab_project" "gitlab" {
-  name = "GitLab"
+  name = "GitLab Terraform"
   namespace_id = gitlab_group.homelab.id
   description = "GitLab Terraform project"
   avatar = "${path.module}/assets/gitlab.png"
 
   visibility_level= "private"
-
-  initialize_with_readme = true
 
   wiki_enabled = false
   packages_enabled = false
@@ -94,6 +92,32 @@ resource "gitlab_project" "gitlab" {
   lifecycle {
     ignore_changes = [ avatar_hash ]
   }
+}
+
+data "github_repository" "github-gitlab" {
+  name = "gitlab-terraform"
+}
+
+resource "null_resource" "import-gitlab" {
+  triggers = {
+    gitlab_project_id = gitlab_project.gitlab.id
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-gitlab.http_clone_url, "https://")} gitlab_repo
+      cd gitlab_repo
+      git remote add gitlab https://${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_USERNAME"]}:${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_TOKEN"]}@${trimprefix(gitlab_project.gitlab.http_url_to_repo, "https://")}
+      git push -u gitlab --all
+      rm -rf ../gitlab_repo
+    EOT
+  }
+}
+
+resource "gitlab_project_mirror" "gitlab-mirror" {
+  project = gitlab_project.gitlab.id
+  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-gitlab.http_clone_url, "https://")}"
+  enabled = true
 }
 
 resource "gitlab_project_membership" "gitlab-renovate" {
