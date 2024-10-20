@@ -138,6 +138,70 @@ resource "gitlab_project_hook" "gitlab-renovatehook" {
 }
 
 /*
+ * Ansivle Project
+ */
+
+resource "gitlab_project" "ansible" {
+  name = "Ansible"
+  namespace_id = gitlab_group.homelab.id
+  description = "Ansible project"
+  avatar = "${path.module}/assets/ansible.png"
+
+  visibility_level= "private"
+
+  wiki_enabled = false
+  packages_enabled = false
+  auto_devops_enabled = false
+
+  lifecycle {
+    ignore_changes = [ avatar_hash ]
+  }
+}
+
+data "github_repository" "github-ansible" {
+  name = "ansible"
+}
+
+resource "null_resource" "import-ansible" {
+  triggers = {
+    gitlab_project_id = gitlab_project.ansible.id
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-ansible.http_clone_url, "https://")} ansible_repo
+      cd ansible_repo
+      git remote add gitlab https://${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_USERNAME"]}:${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_TOKEN"]}@${trimprefix(gitlab_project.ansible.http_url_to_repo, "https://")}
+      git push -u gitlab --all
+      rm -rf ../ansible_repo
+    EOT
+  }
+}
+
+resource "gitlab_project_mirror" "ansible-mirror" {
+  project = gitlab_project.ansible.id
+  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-ansible.http_clone_url, "https://")}"
+  enabled = true
+}
+
+resource "gitlab_project_membership" "ansible-renovate" {
+  project = gitlab_project.ansible.id
+  user_id = gitlab_user.renovate-bot.id
+  access_level = "developer"
+}
+
+resource "gitlab_project_hook" "ansible-renovatehook" {
+  project = gitlab_project.ansible.id
+  url = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_URL"]
+  token = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_TOKEN"]
+  push_events = false
+  issues_events = true
+  enable_ssl_verification = false
+
+  depends_on = [ gitlab_application_settings.gitlab_application_settings ]
+}
+
+/*
  * Testing Project
  */
 resource "gitlab_project" "docker_compose_deploy" {
