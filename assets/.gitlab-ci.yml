@@ -1,0 +1,54 @@
+stages:
+  - deploy
+
+deploy:
+  stage: deploy
+  image: docker:latest
+  services:
+    - docker:19.03.12-dind
+  variables:
+    DOCKER_HOST: ${DOCKER_HOST}
+  script:
+    - apk add --no-cache curl jq gettext
+    - echo "Checking for changed projects..."
+    - |
+      for dir in */; do
+        COMPOSE_FILE="${dir}compose.yaml"
+        DEPLOYED_FILE="${dir}.deployed_version"
+
+        # Compare the current compose file with the deployed version
+        if [ -f "$DEPLOYED_FILE" ] && cmp -s "$COMPOSE_FILE" "$DEPLOYED_FILE"; then
+          echo "No changes detected in ${dir}, skipping deployment."
+          continue
+        fi
+
+        echo "Fetching secrets from Vault for ${dir}..."
+        
+        # Fetch secrets from the corresponding Vault path
+        RESPONSE=$(curl -s -H "X-Vault-Token: ${VAULT_TOKEN}" "${VAULT_URL}/v1/cubbyhole/${dir%/}")
+
+        if echo "$RESPONSE" | jq -e '.data | length > 0' > /dev/null; then
+          # Process secrets with jq
+          SECRETS=$(echo "$RESPONSE" | jq -r '.data | to_entries[] | "\(.key)=\(.value)"')
+
+          echo "Secrets found for ${dir}, exporting as environment variables..."
+          # Export each secret as an environment variable
+          for secret in $SECRETS; do
+            export "$secret"
+          done
+        else
+          echo "No secrets found for ${dir} in Vault, proceeding without additional secrets."
+        fi
+
+        echo "Deploying changes in ${dir}..."
+        
+        # Replace secrets in the compose file using envsubst and deploy the stack in Docker Swarm
+        envsubst < "$COMPOSE_FILE" > "${dir}docker-compose-deployed.yaml"
+        docker stack deploy --detach=false -c "${dir}docker-compose-deployed.yaml" "${dir%/}"
+
+        # Update the .deployed_version file with the latest compose.yaml content
+        cp "$COMPOSE_FILE" "$DEPLOYED_FILE"
+        echo "Updated .deployed_version for ${dir}."
+      done
+  only:
+    - main
