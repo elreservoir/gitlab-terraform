@@ -36,11 +36,6 @@ data "vault_kv_secret_v2" "renovate_secrets" {
   name = "renovate"
 }
 
-data "vault_kv_secret_v2" "semaphore_secrets" {
-  mount = "kv"
-  name = "semaphore"
-}
-
 /*
  * Store secrets to Hashicorp Vault
  */
