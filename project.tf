@@ -15,7 +15,7 @@ resource "gitlab_project" "swarm" {
   name = "Docker Swarm"
   namespace_id = gitlab_group.homelab.id
   description = "Docker Swarm Compose Files"
-  avatar = "${path.module}/assets/docker.png"
+  avatar = "${path.module}/ressources/docker.png"
 
   visibility_level= "private"
 
@@ -73,6 +73,74 @@ resource "gitlab_project_hook" "swarm-renovatehook" {
   depends_on = [ gitlab_application_settings.gitlab_application_settings ]
 }
 
+// Pipeline Settings
+
+resource "gitlab_repository_file" "gitlab-ci" {
+  project = gitlab_project.swarm.id
+  file_path = ".gitlab-ci.yml"
+  branch = "main"
+  content = base64encode(file("${path.module}/ressources/.gitlab-ci.yml"))
+  commit_message = "default gitlab-ci files"
+}
+
+resource "gitlab_repository_file" "template" {
+  project = gitlab_project.swarm.id
+  file_path = "template.yml"
+  branch = "main"
+  content = base64encode(file("${path.module}/ressources/template.yml"))
+  commit_message = "default gitlab-ci files"
+}
+
+resource "gitlab_repository_file" "deploy-stack" {
+  project = gitlab_project.swarm.id
+  file_path = "deploy-stack.sh"
+  branch = "main"
+  content = base64encode(file("${path.module}/ressources/deploy-stack.sh"))
+  commit_message = "default gitlab-ci files"
+}
+
+resource "gitlab_project_variable" "docker_host" {
+  project   = gitlab_project.swarm.id
+  key       = "DOCKER_HOST"
+  value     = data.vault_kv_secret_v2.docker_secrets.data["DOCKER_HOST"]
+}
+
+resource "gitlab_project_variable" "portainer_endpoint_id" {
+  project   = gitlab_project.swarm.id
+  key       = "PORTAINER_ENDPOINT_ID"
+  value     = data.vault_kv_secret_v2.docker_secrets.data["PORTAINER_ENDPOINT_ID"]
+}
+
+resource "gitlab_project_variable" "portainer_swarm_id" {
+  project   = gitlab_project.swarm.id
+  key       = "PORTAINER_SWARM_ID"
+  value     = data.vault_kv_secret_v2.docker_secrets.data["PORTAINER_SWARM_ID"]
+}
+
+resource "gitlab_project_variable" "portainer_addr" {
+  project   = gitlab_project.swarm.id
+  key       = "PORTAINER_ADDR"
+  value     = data.vault_kv_secret_v2.docker_secrets.data["PORTAINER_ADDR"]
+}
+
+resource "gitlab_project_variable" "portainer_token" {
+  project   = gitlab_project.swarm.id
+  key       = "PORTAINER_TOKEN"
+  value     = data.vault_kv_secret_v2.docker_secrets.data["PORTAINER_TOKEN"]
+}
+
+resource "gitlab_project_variable" "vault_addr" {
+  project   = gitlab_project.swarm.id
+  key       = "VAULT_ADDR"
+  value     = var.vault_address
+}
+
+resource "gitlab_project_variable" "vault_token" {
+  project   = gitlab_project.swarm.id
+  key       = "VAULT_TOKEN"
+  value     = var.vault_token
+}
+
 /*
  * GitLab Project
  */
@@ -81,7 +149,7 @@ resource "gitlab_project" "gitlab" {
   name = "GitLab Terraform"
   namespace_id = gitlab_group.homelab.id
   description = "GitLab Terraform project"
-  avatar = "${path.module}/assets/gitlab.png"
+  avatar = "${path.module}/ressources/gitlab.png"
 
   visibility_level= "private"
 
@@ -138,14 +206,14 @@ resource "gitlab_project_hook" "gitlab-renovatehook" {
 }
 
 /*
- * Ansivle Project
+ * Ansible Project
  */
 
 resource "gitlab_project" "ansible" {
   name = "Ansible"
   namespace_id = gitlab_group.homelab.id
   description = "Ansible project"
-  avatar = "${path.module}/assets/ansible.png"
+  avatar = "${path.module}/ressources/ansible.png"
 
   visibility_level= "private"
 
@@ -199,39 +267,4 @@ resource "gitlab_project_hook" "ansible-renovatehook" {
   enable_ssl_verification = false
 
   depends_on = [ gitlab_application_settings.gitlab_application_settings ]
-}
-
-/*
- * Testing Project
- */
-resource "gitlab_project" "docker_compose_deploy" {
-  name        = "docker-compose-deploy"
-  description = "Automates deployment of Docker Compose files."
-  visibility_level = "private"
-}
-
-resource "gitlab_repository_file" "gitlab-ci" {
-  project = gitlab_project.docker_compose_deploy.id
-  file_path = ".gitlab-ci.yml"
-  branch = "main"
-  content = base64encode(file("${path.module}/assets/.gitlab-ci.yml"))
-  commit_message = "default gitlab-ci file"
-}
-
-resource "gitlab_project_variable" "docker_host" {
-  project   = gitlab_project.docker_compose_deploy.id
-  key       = "DOCKER_HOST"
-  value     = data.vault_kv_secret_v2.docker_secrets.data["DOCKER_HOST"]
-}
-
-resource "gitlab_project_variable" "vault_token" {
-  project   = gitlab_project.docker_compose_deploy.id
-  key       = "VAULT_TOKEN"
-  value     = var.vault_token
-}
-
-resource "gitlab_project_variable" "vault_url" {
-  project   = gitlab_project.docker_compose_deploy.id
-  key       = "VAULT_URL"
-  value     = var.vault_address
 }
