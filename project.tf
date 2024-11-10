@@ -75,30 +75,6 @@ resource "gitlab_project_hook" "swarm-renovatehook" {
 
 // Pipeline Settings
 
-resource "gitlab_repository_file" "gitlab-ci" {
-  project = gitlab_project.swarm.id
-  file_path = ".gitlab-ci.yml"
-  branch = "main"
-  content = base64encode(file("${path.module}/ressources/.gitlab-ci.yml"))
-  commit_message = "default gitlab-ci files"
-}
-
-resource "gitlab_repository_file" "template" {
-  project = gitlab_project.swarm.id
-  file_path = "template.yml"
-  branch = "main"
-  content = base64encode(file("${path.module}/ressources/template.yml"))
-  commit_message = "default gitlab-ci files"
-}
-
-resource "gitlab_repository_file" "deploy-stack" {
-  project = gitlab_project.swarm.id
-  file_path = "deploy-stack.sh"
-  branch = "main"
-  content = base64encode(file("${path.module}/ressources/deploy-stack.sh"))
-  commit_message = "default gitlab-ci files"
-}
-
 resource "gitlab_project_variable" "docker_host" {
   project   = gitlab_project.swarm.id
   key       = "DOCKER_HOST"
