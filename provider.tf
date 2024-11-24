@@ -2,7 +2,7 @@ terraform {
   backend "remote" {
     organization = "homelab_iluckyw"
     workspaces {
-      name = "gitlab-terraform"
+      prefix = "gitlab-terraform"
     }
   }
 
