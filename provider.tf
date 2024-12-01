@@ -1,9 +1,7 @@
 terraform {
   backend "remote" {
     organization = "homelab_iluckyw"
-    workspaces {
-      name = "gitlab-terraform"
-    }
+
   }
 
   required_providers {
