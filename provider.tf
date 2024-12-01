@@ -1,7 +1,10 @@
 terraform {
   backend "remote" {
+    hostname = "app.terraform.io"
     organization = "homelab_iluckyw"
-
+    workspaces {
+      name = "default"
+    }
   }
 
   required_providers {
