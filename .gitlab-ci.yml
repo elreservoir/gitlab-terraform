@@ -7,11 +7,6 @@ variables:
   TF_USERNAME: gitlab-ci-token
   TF_PASSWORD: ${CI_JOB_TOKEN}
 
-cache:
-  key: ${CI_COMMIT_REF_SLUG}
-  paths:
-    - .terraform
-
 terraform-test:
   stage: validate
   image:
