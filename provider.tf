@@ -1,10 +1,6 @@
 terraform {
-  backend "remote" {
-    hostname = "app.terraform.io"
-    organization = "homelab_iluckyw"
-    workspaces {
-      name = "default"
-    }
+  backend "http" {
+    # The address will be provided by GitLab CI
   }
 
   required_providers {
