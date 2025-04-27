@@ -79,42 +79,37 @@ resource "gitlab_project_variable" "docker_host" {
   project   = gitlab_project.swarm.id
   key       = "DOCKER_HOST"
   value     = data.vault_kv_secret_v2.docker_secrets.data["DOCKER_HOST"]
+  protected = true
 }
 
 resource "gitlab_project_variable" "portainer_endpoint_id" {
   project   = gitlab_project.swarm.id
   key       = "PORTAINER_ENDPOINT_ID"
   value     = data.vault_kv_secret_v2.docker_secrets.data["PORTAINER_ENDPOINT_ID"]
+  protected = true
 }
 
 resource "gitlab_project_variable" "portainer_swarm_id" {
   project   = gitlab_project.swarm.id
   key       = "PORTAINER_SWARM_ID"
   value     = data.vault_kv_secret_v2.docker_secrets.data["PORTAINER_SWARM_ID"]
+  protected = true
 }
 
 resource "gitlab_project_variable" "portainer_addr" {
   project   = gitlab_project.swarm.id
   key       = "PORTAINER_ADDR"
   value     = data.vault_kv_secret_v2.docker_secrets.data["PORTAINER_ADDR"]
+  protected = true
 }
 
 resource "gitlab_project_variable" "portainer_token" {
   project   = gitlab_project.swarm.id
   key       = "PORTAINER_TOKEN"
   value     = data.vault_kv_secret_v2.docker_secrets.data["PORTAINER_TOKEN"]
-}
-
-resource "gitlab_project_variable" "vault_addr" {
-  project   = gitlab_project.swarm.id
-  key       = "VAULT_ADDR"
-  value     = var.vault_address
-}
-
-resource "gitlab_project_variable" "vault_token" {
-  project   = gitlab_project.swarm.id
-  key       = "VAULT_TOKEN"
-  value     = var.vault_token
+  masked    = true
+  hidden    = true
+  protected = true
 }
 
 /*

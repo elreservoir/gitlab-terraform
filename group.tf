@@ -9,6 +9,26 @@ resource "gitlab_group" "homelab" {
   }
 }
 
+/* Group CI/CD Variables */
+
+resource "gitlab_group_variable" "vault_addr" {
+  group     = gitlab_group.homelab.id
+  key       = "VAULT_ADDR"
+  value     = var.vault_address
+  protected = true
+}
+
+resource "gitlab_group_variable" "vault_token" {
+  group     = gitlab_group.homelab.id
+  key       = "VAULT_TOKEN"
+  value     = var.vault_token
+  masked    = true
+  hidden    = true
+  protected = true
+}
+
+/* Group Labels */
+
 resource "gitlab_group_label" "renovate" {
   group = gitlab_group.homelab.id
   name = "renovate"
