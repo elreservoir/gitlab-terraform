@@ -31,8 +31,8 @@ terraform-plan-apply:
     name: ghcr.io/opentofu/opentofu:latest
     entrypoint: [""]
   before_script:
-  - export TF_VAR_VAULT_TOKEN=${VAULT_TOKEN}
-  - export TF_VAR_VAULT_ADDRESS=${VAULT_ADDR}
+  - export TF_VAR_vault_token=${VAULT_TOKEN}
+  - export TF_VAR_vault_address=${VAULT_ADDR}
   script: |
     tofu init \
     -backend-config=address=${TF_ADDRESS} \
