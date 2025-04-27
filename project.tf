@@ -54,6 +54,12 @@ resource "gitlab_project_mirror" "swarm-mirror" {
   project = gitlab_project.swarm.id
   url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-swarm.http_clone_url, "https://")}"
   enabled = true
+
+  lifecycle {
+    ignore_changes = [
+      only_protected_branches,
+    ]
+  }
 }
 
 resource "gitlab_project_membership" "swarm-renovate" {
@@ -157,6 +163,12 @@ resource "gitlab_project_mirror" "gitlab-mirror" {
   project = gitlab_project.gitlab.id
   url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-gitlab.http_clone_url, "https://")}"
   enabled = true
+
+  lifecycle {
+    ignore_changes = [
+      only_protected_branches,
+    ]
+  }
 }
 
 resource "gitlab_project_membership" "gitlab-renovate" {
@@ -221,6 +233,12 @@ resource "gitlab_project_mirror" "ansible-mirror" {
   project = gitlab_project.ansible.id
   url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-ansible.http_clone_url, "https://")}"
   enabled = true
+
+  lifecycle {
+    ignore_changes = [
+      only_protected_branches,
+    ]
+  }
 }
 
 resource "gitlab_project_membership" "ansible-renovate" {
