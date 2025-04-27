@@ -11,7 +11,7 @@ terraform-test:
   stage: validate
   image:
     name: ghcr.io/opentofu/opentofu:latest
-  entrypoint: [""]
+    entrypoint: [""]
   script: |
     tofu init \
     -backend-config=address=${TF_ADDRESS} \
@@ -25,11 +25,11 @@ terraform-test:
     tofu validate
 
 terraform-plan-apply:
-  stage: terraform
+  stage: apply
   needs: ["terraform-test"]
   image:
     name: ghcr.io/opentofu/opentofu:latest
-  entrypoint: [""]
+    entrypoint: [""]
   before_script:
   - export TF_VAR_VAULT_TOKEN=${VAULT_TOKEN}
   - export TF_VAR_VAULT_ADDRESS=${VAULT_ADDR}
