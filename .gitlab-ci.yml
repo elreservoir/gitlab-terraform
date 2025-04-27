@@ -26,6 +26,9 @@ terraform-test:
 
 terraform-plan-apply:
   stage: apply
+  only:
+    refs:
+      - main
   needs: ["terraform-test"]
   image:
     name: ghcr.io/opentofu/opentofu:1.9.1
