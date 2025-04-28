@@ -24,7 +24,7 @@ resource "gitlab_project" "swarm" {
   auto_devops_enabled = false
 
   ci_forward_deployment_enabled = false
-  auto_cancel_pending_pipelines = false
+  auto_cancel_pending_pipelines = "disabled"
 
   depends_on = [ gitlab_application_settings.gitlab_application_settings ]
 
