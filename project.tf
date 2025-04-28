@@ -22,6 +22,8 @@ resource "gitlab_project" "swarm" {
   wiki_enabled = false
   packages_enabled = false
   auto_devops_enabled = false
+  
+  ci_forward_deployment_enabled = true
 
   depends_on = [ gitlab_application_settings.gitlab_application_settings ]
 
@@ -126,7 +128,7 @@ resource "gitlab_project" "gitlab" {
   name = "GitLab Terraform"
   namespace_id = gitlab_group.homelab.id
   description = "GitLab Terraform project"
-  avatar = "${path.module}/ressources/gitlab-terraform.png"
+  avatar = "${path.module}/ressources/terraform-gitlab.png"
 
   visibility_level= "private"
 
