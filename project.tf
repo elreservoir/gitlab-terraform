@@ -192,6 +192,76 @@ resource "gitlab_project_hook" "gitlab-renovatehook" {
 }
 
 /*
+ * Adguard Project
+ */
+
+resource "gitlab_project" "adguard" {
+  name = "AdGuard Terraform"
+  namespace_id = gitlab_group.homelab.id
+  description = "AdGuard Terraform project"
+  avatar = "${path.module}/ressources/terraform-adguard.png"
+
+  visibility_level= "private"
+
+  wiki_enabled = false
+  packages_enabled = false
+  auto_devops_enabled = false
+
+  lifecycle {
+    ignore_changes = [ avatar_hash ]
+  }
+}
+
+data "github_repository" "github-adguard" {
+  name = "adguard-terraform"
+}
+
+resource "null_resource" "import-adguard" {
+  triggers = {
+    gitlab_project_id = gitlab_project.adguard.id
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-adguard.http_clone_url, "https://")} adguard_repo
+      cd adguard_repo
+      git remote add gitlab https://${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_USERNAME"]}:${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_TOKEN"]}@${trimprefix(gitlab_project.adguard.http_url_to_repo, "https://")}
+      git push -u gitlab --all
+      rm -rf ../adguard_repo
+    EOT
+  }
+}
+
+resource "gitlab_project_mirror" "adguard-mirror" {
+  project = gitlab_project.adguard.id
+  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-adguard.http_clone_url, "https://")}"
+  enabled = true
+
+  lifecycle {
+    ignore_changes = [
+      only_protected_branches,
+    ]
+  }
+}
+
+resource "gitlab_project_membership" "adguard-renovate" {
+  project = gitlab_project.adguard.id
+  user_id = gitlab_user.renovate-bot.id
+  access_level = "developer"
+}
+
+resource "gitlab_project_hook" "adguard-renovatehook" {
+  project = gitlab_project.adguard.id
+  url = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_URL"]
+  token = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_TOKEN"]
+  push_events = false
+  issues_events = true
+  enable_ssl_verification = false
+
+  depends_on = [ gitlab_application_settings.gitlab_application_settings ]
+}
+
+/*
  * Ansible Project
  */
 
