@@ -126,7 +126,7 @@ resource "gitlab_project" "gitlab" {
   name = "GitLab Terraform"
   namespace_id = gitlab_group.homelab.id
   description = "GitLab Terraform project"
-  avatar = "${path.module}/ressources/gitlab.png"
+  avatar = "${path.module}/ressources/gitlab-terraform.png"
 
   visibility_level= "private"
 
