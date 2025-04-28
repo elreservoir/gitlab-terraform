@@ -22,8 +22,8 @@ resource "gitlab_project" "swarm" {
   wiki_enabled = false
   packages_enabled = false
   auto_devops_enabled = false
-  
-  ci_forward_deployment_enabled = true
+
+  ci_forward_deployment_enabled = false
 
   depends_on = [ gitlab_application_settings.gitlab_application_settings ]
 
