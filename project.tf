@@ -15,7 +15,7 @@ resource "gitlab_project" "swarm" {
   name = "Docker Swarm"
   namespace_id = gitlab_group.homelab.id
   description = "Docker Swarm Compose Files"
-  avatar = "${path.module}/ressources/docker.png"
+  avatar = "${path.module}/resources/docker.png"
 
   visibility_level= "private"
 
@@ -129,7 +129,7 @@ resource "gitlab_project" "gitlab" {
   name = "GitLab Terraform"
   namespace_id = gitlab_group.homelab.id
   description = "GitLab Terraform project"
-  avatar = "${path.module}/ressources/terraform-gitlab.png"
+  avatar = "${path.module}/resources/gitlab-terraform.png"
 
   visibility_level= "private"
 
@@ -199,7 +199,7 @@ resource "gitlab_project" "adguard" {
   name = "AdGuard Terraform"
   namespace_id = gitlab_group.homelab.id
   description = "AdGuard Terraform project"
-  avatar = "${path.module}/ressources/terraform-adguard.png"
+  avatar = "${path.module}/resources/adguard-terraform.png"
 
   visibility_level= "private"
 
@@ -269,7 +269,7 @@ resource "gitlab_project" "oracle-cloud" {
   name = "Oracle Cloud Terraform"
   namespace_id = gitlab_group.homelab.id
   description = "Oracle Cloud Terraform project"
-  avatar = "${path.module}/ressources/terraform-oracle-cloud.png"
+  avatar = "${path.module}/resources/oracle-cloud-terraform.png"
 
   visibility_level= "private"
 
@@ -349,7 +349,7 @@ resource "gitlab_project" "ansible" {
   name = "Ansible"
   namespace_id = gitlab_group.homelab.id
   description = "Ansible project"
-  avatar = "${path.module}/ressources/ansible.png"
+  avatar = "${path.module}/resources/ansible.png"
 
   visibility_level= "private"
 

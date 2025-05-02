@@ -2,7 +2,7 @@ resource "gitlab_group" "homelab" {
   name = "Homelab"
   path = "homelab"
   description = "Everything associated to the homelab"
-  avatar = "${path.module}/ressources/home.png"
+  avatar = "${path.module}/resources/home.png"
 
   lifecycle {
     ignore_changes = [ avatar_hash ]
