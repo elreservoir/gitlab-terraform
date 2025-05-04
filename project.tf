@@ -33,8 +33,14 @@ resource "gitlab_project" "swarm" {
   }
 }
 
-data "github_repository" "github-swarm" {
-  name = "docker-swarm"
+resource "github_repository" "github_swarm" {
+  name        = "docker-swarm"
+  visibility  = "private"
+  auto_init   = true
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "null_resource" "import-swarm" {
@@ -44,7 +50,7 @@ resource "null_resource" "import-swarm" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-swarm.http_clone_url, "https://")} swarm_repo
+      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_swarm.http_clone_url, "https://")} swarm_repo
       cd swarm_repo
       git remote add gitlab https://${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_USERNAME"]}:${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_TOKEN"]}@${trimprefix(gitlab_project.swarm.http_url_to_repo, "https://")}
       git push -u gitlab --all
@@ -55,7 +61,7 @@ resource "null_resource" "import-swarm" {
 
 resource "gitlab_project_mirror" "swarm-mirror" {
   project = gitlab_project.swarm.id
-  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-swarm.http_clone_url, "https://")}"
+  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_swarm.http_clone_url, "https://")}"
   enabled = true
 
   lifecycle {
@@ -142,8 +148,14 @@ resource "gitlab_project" "gitlab" {
   }
 }
 
-data "github_repository" "github-gitlab" {
-  name = "gitlab-terraform"
+resource "github_repository" "github_gitlab" {
+  name        = "gitlab-terraform"
+  visibility  = "private"
+  auto_init   = true
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "null_resource" "import-gitlab" {
@@ -153,7 +165,7 @@ resource "null_resource" "import-gitlab" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-gitlab.http_clone_url, "https://")} gitlab_repo
+      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_gitlab.http_clone_url, "https://")} gitlab_repo
       cd gitlab_repo
       git remote add gitlab https://${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_USERNAME"]}:${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_TOKEN"]}@${trimprefix(gitlab_project.gitlab.http_url_to_repo, "https://")}
       git push -u gitlab --all
@@ -164,7 +176,7 @@ resource "null_resource" "import-gitlab" {
 
 resource "gitlab_project_mirror" "gitlab-mirror" {
   project = gitlab_project.gitlab.id
-  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-gitlab.http_clone_url, "https://")}"
+  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_gitlab.http_clone_url, "https://")}"
   enabled = true
 
   lifecycle {
@@ -212,8 +224,14 @@ resource "gitlab_project" "adguard" {
   }
 }
 
-data "github_repository" "github-adguard" {
-  name = "adguard-terraform"
+resource "github_repository" "github_adguard" {
+  name        = "adguard-terraform"
+  visibility  = "private"
+  auto_init   = true
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "null_resource" "import-adguard" {
@@ -223,7 +241,7 @@ resource "null_resource" "import-adguard" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-adguard.http_clone_url, "https://")} adguard_repo
+      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_adguard.http_clone_url, "https://")} adguard_repo
       cd adguard_repo
       git remote add gitlab https://${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_USERNAME"]}:${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_TOKEN"]}@${trimprefix(gitlab_project.adguard.http_url_to_repo, "https://")}
       git push -u gitlab --all
@@ -234,7 +252,7 @@ resource "null_resource" "import-adguard" {
 
 resource "gitlab_project_mirror" "adguard-mirror" {
   project = gitlab_project.adguard.id
-  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-adguard.http_clone_url, "https://")}"
+  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_adguard.http_clone_url, "https://")}"
   enabled = true
 
   lifecycle {
@@ -280,10 +298,6 @@ resource "gitlab_project" "oracle-cloud" {
   lifecycle {
     ignore_changes = [ avatar_hash ]
   }
-}
-
-data "github_repository" "github-oracle_cloud" {
-  name = "oracle_cloud-terraform"
 }
 
 resource "github_repository" "github_oracle-cloud" {
@@ -362,8 +376,14 @@ resource "gitlab_project" "ansible" {
   }
 }
 
-data "github_repository" "github-ansible" {
-  name = "ansible"
+resource "github_repository" "github_ansible" {
+  name        = "ansible"
+  visibility  = "private"
+  auto_init   = true
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "null_resource" "import-ansible" {
@@ -373,7 +393,7 @@ resource "null_resource" "import-ansible" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-ansible.http_clone_url, "https://")} ansible_repo
+      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_ansible.http_clone_url, "https://")} ansible_repo
       cd ansible_repo
       git remote add gitlab https://${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_USERNAME"]}:${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_TOKEN"]}@${trimprefix(gitlab_project.ansible.http_url_to_repo, "https://")}
       git push -u gitlab --all
@@ -384,7 +404,7 @@ resource "null_resource" "import-ansible" {
 
 resource "gitlab_project_mirror" "ansible-mirror" {
   project = gitlab_project.ansible.id
-  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(data.github_repository.github-ansible.http_clone_url, "https://")}"
+  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_ansible.http_clone_url, "https://")}"
   enabled = true
 
   lifecycle {
