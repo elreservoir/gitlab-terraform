@@ -356,6 +356,82 @@ resource "gitlab_project_hook" "oracle-cloud_renovatehook" {
 }
 
 /*
+ * Packer Project
+ */
+
+resource "gitlab_project" "packer" {
+  name = "Packer"
+  namespace_id = gitlab_group.homelab.id
+  description = "Packer project"
+  avatar = "${path.module}/resources/packer.png"
+
+  visibility_level= "private"
+
+  wiki_enabled = false
+  packages_enabled = false
+  auto_devops_enabled = false
+
+  lifecycle {
+    ignore_changes = [ avatar_hash ]
+  }
+}
+
+resource "github_repository" "github_packer" {
+  name        = "packer"
+  visibility  = "private"
+  auto_init   = true
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "null_resource" "import-packer" {
+  triggers = {
+    gitlab_project_id = gitlab_project.packer.id
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_packer.http_clone_url, "https://")} packer_repo
+      cd packer_repo
+      git remote add gitlab https://${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_USERNAME"]}:${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_TOKEN"]}@${trimprefix(gitlab_project.packer.http_url_to_repo, "https://")}
+      git push -u gitlab --all
+      rm -rf ../packer_repo
+    EOT
+  }
+}
+
+resource "gitlab_project_mirror" "packer-mirror" {
+  project = gitlab_project.packer.id
+  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_packer.http_clone_url, "https://")}"
+  enabled = true
+
+  lifecycle {
+    ignore_changes = [
+      only_protected_branches,
+    ]
+  }
+}
+
+resource "gitlab_project_membership" "packer-renovate" {
+  project = gitlab_project.packer.id
+  user_id = gitlab_user.renovate-bot.id
+  access_level = "developer"
+}
+
+resource "gitlab_project_hook" "packer-renovatehook" {
+  project = gitlab_project.packer.id
+  url = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_URL"]
+  token = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_TOKEN"]
+  push_events = false
+  issues_events = true
+  enable_ssl_verification = false
+
+  depends_on = [ gitlab_application_settings.gitlab_application_settings ]
+}
+
+/*
  * Ansible Project
  */
 
