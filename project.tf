@@ -512,9 +512,9 @@ resource "gitlab_project_hook" "ansible-renovatehook" {
  */
 
 resource "gitlab_project" "gitlab-ci" {
-  name = "GitLab CI/CD Terraform"
+  name = "GitLab CI"
   namespace_id = gitlab_group.homelab.id
-  description = "GitLab CI/CD Terraform project"
+  description = "GitLab CI project"
   avatar = "${path.module}/resources/gitlab-ci.png"
 
   visibility_level= "private"
