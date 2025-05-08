@@ -506,3 +506,79 @@ resource "gitlab_project_hook" "ansible-renovatehook" {
 
   depends_on = [ gitlab_application_settings.gitlab_application_settings ]
 }
+
+/*
+ * AdGuard Project
+ */
+
+resource "gitlab_project" "gitlab-ci" {
+  name = "GitLab CI/CD Terraform"
+  namespace_id = gitlab_group.homelab.id
+  description = "GitLab CI/CD Terraform project"
+  avatar = "${path.module}/resources/gitlab-ci.png"
+
+  visibility_level= "private"
+
+  wiki_enabled = false
+  packages_enabled = false
+  auto_devops_enabled = false
+
+  lifecycle {
+    ignore_changes = [ avatar_hash ]
+  }
+}
+
+resource "github_repository" "github_gitlab-ci" {
+  name        = "gitlab-ci"
+  visibility  = "private"
+  auto_init   = true
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "null_resource" "import-gitlab-ci" {
+  triggers = {
+    gitlab_project_id = gitlab_project.gitlab-ci.id
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_gitlab-ci.http_clone_url, "https://")} gitlab-ci_repo
+      cd gitlab-ci_repo
+      git remote add gitlab https://${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_USERNAME"]}:${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_TOKEN"]}@${trimprefix(gitlab_project.gitlab-ci.http_url_to_repo, "https://")}
+      git push -u gitlab --all
+      rm -rf ../gitlab-ci_repo
+    EOT
+  }
+}
+
+resource "gitlab_project_mirror" "gitlab-ci-mirror" {
+  project = gitlab_project.gitlab-ci.id
+  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_gitlab-ci.http_clone_url, "https://")}"
+  enabled = true
+
+  lifecycle {
+    ignore_changes = [
+      only_protected_branches,
+    ]
+  }
+}
+
+resource "gitlab_project_membership" "gitlab-ci-renovate" {
+  project = gitlab_project.gitlab-ci.id
+  user_id = gitlab_user.renovate-bot.id
+  access_level = "developer"
+}
+
+resource "gitlab_project_hook" "gitlab-ci-renovatehook" {
+  project = gitlab_project.gitlab-ci.id
+  url = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_URL"]
+  token = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_TOKEN"]
+  push_events = false
+  issues_events = true
+  enable_ssl_verification = false
+
+  depends_on = [ gitlab_application_settings.gitlab_application_settings ]
+}
