@@ -128,457 +128,83 @@ resource "gitlab_project_variable" "portainer_token" {
 }
 
 /*
- * GitLab Project
+ * Repositories
  */
 
-resource "gitlab_project" "gitlab" {
+module "gitlab_repository" {
+  source = "./modules/repository"
+
   name = "GitLab Terraform"
-  namespace_id = gitlab_group.homelab.id
   description = "GitLab Terraform project"
   avatar = "${path.module}/resources/gitlab-terraform.png"
 
-  visibility_level= "private"
+  github_mirror_name = "gitlab-terraform"
 
-  wiki_enabled = false
-  packages_enabled = false
-  auto_devops_enabled = false
-
-  lifecycle {
-    ignore_changes = [ avatar_hash ]
-  }
-}
-
-resource "github_repository" "github_gitlab" {
-  name        = "gitlab-terraform"
-  visibility  = "private"
-  auto_init   = true
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-resource "null_resource" "import-gitlab" {
-  triggers = {
-    gitlab_project_id = gitlab_project.gitlab.id
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_gitlab.http_clone_url, "https://")} gitlab_repo
-      cd gitlab_repo
-      git remote add gitlab https://${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_USERNAME"]}:${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_TOKEN"]}@${trimprefix(gitlab_project.gitlab.http_url_to_repo, "https://")}
-      git push -u gitlab --all
-      rm -rf ../gitlab_repo
-    EOT
-  }
-}
-
-resource "gitlab_project_mirror" "gitlab-mirror" {
-  project = gitlab_project.gitlab.id
-  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_gitlab.http_clone_url, "https://")}"
-  enabled = true
-
-  lifecycle {
-    ignore_changes = [
-      only_protected_branches,
-    ]
-  }
-}
-
-resource "gitlab_project_membership" "gitlab-renovate" {
-  project = gitlab_project.gitlab.id
-  user_id = gitlab_user.renovate-bot.id
-  access_level = "developer"
-}
-
-resource "gitlab_project_hook" "gitlab-renovatehook" {
-  project = gitlab_project.gitlab.id
-  url = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_URL"]
-  token = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_TOKEN"]
-  push_events = false
-  issues_events = true
-  enable_ssl_verification = false
-
-  depends_on = [ gitlab_application_settings.gitlab_application_settings ]
-}
-
-/*
- * AdGuard Project
- */
-
-resource "gitlab_project" "adguard" {
-  name = "AdGuard Terraform"
   namespace_id = gitlab_group.homelab.id
+  renovate_bot_id = gitlab_user.renovate-bot.id
+}
+
+module "adguard_repository" {
+  source = "./modules/repository"
+
+  name = "AdGuard Terraform"
   description = "AdGuard Terraform project"
   avatar = "${path.module}/resources/adguard-terraform.png"
 
-  visibility_level= "private"
+  github_mirror_name = "adguard-terraform"
 
-  wiki_enabled = false
-  packages_enabled = false
-  auto_devops_enabled = false
-
-  lifecycle {
-    ignore_changes = [ avatar_hash ]
-  }
-}
-
-resource "github_repository" "github_adguard" {
-  name        = "adguard-terraform"
-  visibility  = "private"
-  auto_init   = true
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-resource "null_resource" "import-adguard" {
-  triggers = {
-    gitlab_project_id = gitlab_project.adguard.id
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_adguard.http_clone_url, "https://")} adguard_repo
-      cd adguard_repo
-      git remote add gitlab https://${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_USERNAME"]}:${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_TOKEN"]}@${trimprefix(gitlab_project.adguard.http_url_to_repo, "https://")}
-      git push -u gitlab --all
-      rm -rf ../adguard_repo
-    EOT
-  }
-}
-
-resource "gitlab_project_mirror" "adguard-mirror" {
-  project = gitlab_project.adguard.id
-  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_adguard.http_clone_url, "https://")}"
-  enabled = true
-
-  lifecycle {
-    ignore_changes = [
-      only_protected_branches,
-    ]
-  }
-}
-
-resource "gitlab_project_membership" "adguard-renovate" {
-  project = gitlab_project.adguard.id
-  user_id = gitlab_user.renovate-bot.id
-  access_level = "developer"
-}
-
-resource "gitlab_project_hook" "adguard-renovatehook" {
-  project = gitlab_project.adguard.id
-  url = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_URL"]
-  token = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_TOKEN"]
-  push_events = false
-  issues_events = true
-  enable_ssl_verification = false
-
-  depends_on = [ gitlab_application_settings.gitlab_application_settings ]
-}
-
-/*
- * Oracle Cloud Project
- */
-
-resource "gitlab_project" "oracle-cloud" {
-  name = "Oracle Cloud Terraform"
   namespace_id = gitlab_group.homelab.id
+  renovate_bot_id = gitlab_user.renovate-bot.id
+}
+
+module "oracle_cloud_repository" {
+  source = "./modules/repository"
+
+  name = "Oracle Cloud Terraform"
   description = "Oracle Cloud Terraform project"
   avatar = "${path.module}/resources/oracle-cloud-terraform.png"
 
-  visibility_level= "private"
+  github_mirror_name = "oracle-cloud-terraform"
 
-  wiki_enabled = false
-  packages_enabled = false
-  auto_devops_enabled = false
-
-  lifecycle {
-    ignore_changes = [ avatar_hash ]
-  }
-}
-
-resource "github_repository" "github_oracle-cloud" {
-  name        = "oracle-cloud-terraform"
-  visibility  = "private"
-  auto_init   = true
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-resource "null_resource" "import_oracle-cloud" {
-  triggers = {
-    gitlab_project_id = gitlab_project.oracle-cloud.id
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_oracle-cloud.http_clone_url, "https://")} oracle-cloud_repo
-      cd oracle-cloud_repo
-      git remote add gitlab https://${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_USERNAME"]}:${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_TOKEN"]}@${trimprefix(gitlab_project.oracle-cloud.http_url_to_repo, "https://")}
-      git push -u gitlab --all
-      rm -rf ../oracle-cloud_repo
-    EOT
-  }
-}
-
-resource "gitlab_project_mirror" "oracle-cloud_mirror" {
-  project = gitlab_project.oracle-cloud.id
-  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_oracle-cloud.http_clone_url, "https://")}"
-  enabled = true
-
-  lifecycle {
-    ignore_changes = [
-      only_protected_branches,
-    ]
-  }
-}
-
-resource "gitlab_project_membership" "oracle-cloud_renovate" {
-  project = gitlab_project.oracle-cloud.id
-  user_id = gitlab_user.renovate-bot.id
-  access_level = "developer"
-}
-
-resource "gitlab_project_hook" "oracle-cloud_renovatehook" {
-  project = gitlab_project.oracle-cloud.id
-  url = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_URL"]
-  token = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_TOKEN"]
-  push_events = false
-  issues_events = true
-  enable_ssl_verification = false
-
-  depends_on = [ gitlab_application_settings.gitlab_application_settings ]
-}
-
-/*
- * Packer Project
- */
-
-resource "gitlab_project" "packer" {
-  name = "Packer"
   namespace_id = gitlab_group.homelab.id
+  renovate_bot_id = gitlab_user.renovate-bot.id
+}
+
+module "packer_repository" {
+  source = "./modules/repository"
+
+  name = "Packer"
   description = "Packer project"
   avatar = "${path.module}/resources/packer.png"
 
-  visibility_level= "private"
+  github_mirror_name = "packer"
 
-  wiki_enabled = false
-  packages_enabled = false
-  auto_devops_enabled = false
-
-  lifecycle {
-    ignore_changes = [ avatar_hash ]
-  }
-}
-
-resource "github_repository" "github_packer" {
-  name        = "packer"
-  visibility  = "private"
-  auto_init   = true
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-resource "null_resource" "import-packer" {
-  triggers = {
-    gitlab_project_id = gitlab_project.packer.id
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_packer.http_clone_url, "https://")} packer_repo
-      cd packer_repo
-      git remote add gitlab https://${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_USERNAME"]}:${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_TOKEN"]}@${trimprefix(gitlab_project.packer.http_url_to_repo, "https://")}
-      git push -u gitlab --all
-      rm -rf ../packer_repo
-    EOT
-  }
-}
-
-resource "gitlab_project_mirror" "packer-mirror" {
-  project = gitlab_project.packer.id
-  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_packer.http_clone_url, "https://")}"
-  enabled = true
-
-  lifecycle {
-    ignore_changes = [
-      only_protected_branches,
-    ]
-  }
-}
-
-resource "gitlab_project_membership" "packer-renovate" {
-  project = gitlab_project.packer.id
-  user_id = gitlab_user.renovate-bot.id
-  access_level = "developer"
-}
-
-resource "gitlab_project_hook" "packer-renovatehook" {
-  project = gitlab_project.packer.id
-  url = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_URL"]
-  token = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_TOKEN"]
-  push_events = false
-  issues_events = true
-  enable_ssl_verification = false
-
-  depends_on = [ gitlab_application_settings.gitlab_application_settings ]
-}
-
-/*
- * Ansible Project
- */
-
-resource "gitlab_project" "ansible" {
-  name = "Ansible"
   namespace_id = gitlab_group.homelab.id
+  renovate_bot_id = gitlab_user.renovate-bot.id
+}
+
+module "ansible_repository" {
+  source = "./modules/repository"
+
+  name = "Ansible"
   description = "Ansible project"
   avatar = "${path.module}/resources/ansible.png"
 
-  visibility_level= "private"
+  github_mirror_name = "ansible"
 
-  wiki_enabled = false
-  packages_enabled = false
-  auto_devops_enabled = false
-
-  lifecycle {
-    ignore_changes = [ avatar_hash ]
-  }
-}
-
-resource "github_repository" "github_ansible" {
-  name        = "ansible"
-  visibility  = "private"
-  auto_init   = true
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-resource "null_resource" "import-ansible" {
-  triggers = {
-    gitlab_project_id = gitlab_project.ansible.id
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_ansible.http_clone_url, "https://")} ansible_repo
-      cd ansible_repo
-      git remote add gitlab https://${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_USERNAME"]}:${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_TOKEN"]}@${trimprefix(gitlab_project.ansible.http_url_to_repo, "https://")}
-      git push -u gitlab --all
-      rm -rf ../ansible_repo
-    EOT
-  }
-}
-
-resource "gitlab_project_mirror" "ansible-mirror" {
-  project = gitlab_project.ansible.id
-  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_ansible.http_clone_url, "https://")}"
-  enabled = true
-
-  lifecycle {
-    ignore_changes = [
-      only_protected_branches,
-    ]
-  }
-}
-
-resource "gitlab_project_membership" "ansible-renovate" {
-  project = gitlab_project.ansible.id
-  user_id = gitlab_user.renovate-bot.id
-  access_level = "developer"
-}
-
-resource "gitlab_project_hook" "ansible-renovatehook" {
-  project = gitlab_project.ansible.id
-  url = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_URL"]
-  token = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_TOKEN"]
-  push_events = false
-  issues_events = true
-  enable_ssl_verification = false
-
-  depends_on = [ gitlab_application_settings.gitlab_application_settings ]
-}
-
-/*
- * AdGuard Project
- */
-
-resource "gitlab_project" "gitlab-ci" {
-  name = "GitLab CI"
   namespace_id = gitlab_group.homelab.id
+  renovate_bot_id = gitlab_user.renovate-bot.id
+}
+
+module "gitlab_ci_repository" {
+  source = "./modules/repository"
+
+  name = "GitLab CI"
   description = "GitLab CI project"
   avatar = "${path.module}/resources/gitlab-ci.png"
 
-  visibility_level= "private"
+  github_mirror_name = "gitlab-ci"
 
-  wiki_enabled = false
-  packages_enabled = false
-  auto_devops_enabled = false
-
-  lifecycle {
-    ignore_changes = [ avatar_hash ]
-  }
-}
-
-resource "github_repository" "github_gitlab-ci" {
-  name        = "gitlab-ci"
-  visibility  = "private"
-  auto_init   = true
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-resource "null_resource" "import-gitlab-ci" {
-  triggers = {
-    gitlab_project_id = gitlab_project.gitlab-ci.id
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      git clone https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_gitlab-ci.http_clone_url, "https://")} gitlab-ci_repo
-      cd gitlab-ci_repo
-      git remote add gitlab https://${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_USERNAME"]}:${data.vault_kv_secret_v2.gitlab_secrets.data["GITLAB_TOKEN"]}@${trimprefix(gitlab_project.gitlab-ci.http_url_to_repo, "https://")}
-      git push -u gitlab --all
-      rm -rf ../gitlab-ci_repo
-    EOT
-  }
-}
-
-resource "gitlab_project_mirror" "gitlab-ci-mirror" {
-  project = gitlab_project.gitlab-ci.id
-  url = "https://${data.vault_kv_secret_v2.github_secrets.data["GITHUB_USERNAME"]}:${data.vault_kv_secret_v2.github_secrets.data["GITHUB_TOKEN"]}@${trimprefix(github_repository.github_gitlab-ci.http_clone_url, "https://")}"
-  enabled = true
-
-  lifecycle {
-    ignore_changes = [
-      only_protected_branches,
-    ]
-  }
-}
-
-resource "gitlab_project_membership" "gitlab-ci-renovate" {
-  project = gitlab_project.gitlab-ci.id
-  user_id = gitlab_user.renovate-bot.id
-  access_level = "developer"
-}
-
-resource "gitlab_project_hook" "gitlab-ci-renovatehook" {
-  project = gitlab_project.gitlab-ci.id
-  url = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_URL"]
-  token = data.vault_kv_secret_v2.renovate_secrets.data["RENOVATE_WEBHOOK_TOKEN"]
-  push_events = false
-  issues_events = true
-  enable_ssl_verification = false
-
-  depends_on = [ gitlab_application_settings.gitlab_application_settings ]
+  namespace_id = gitlab_group.homelab.id
+  renovate_bot_id = gitlab_user.renovate-bot.id
 }
