@@ -1,7 +1,7 @@
 terraform {
-  backend "http" {
+  #backend "http" {
     # The address will be provided by GitLab CI
-  }
+  #}
 
   required_providers {
     github = {

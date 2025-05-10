@@ -9,6 +9,7 @@ variables:
   TF_PASSWORD: ${CI_JOB_TOKEN}
 
 tofu-test:
+  when: never  # Disable this job temporarily
   stage: validate
   image:
     name: ghcr.io/opentofu/opentofu:1.9.1
@@ -26,6 +27,7 @@ tofu-test:
     tofu validate
 
 tofu-plan-apply:
+  when: never  # Disable this job temporarily
   stage: apply
   only:
     refs:

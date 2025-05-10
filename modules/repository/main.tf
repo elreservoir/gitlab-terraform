@@ -20,20 +20,24 @@ resource "gitlab_project" "gitlab_repository" {
  * Conditional on: "var.github_mirror_name"
  */
 
-resource "github_repository" "github_repository" {
+resource "null_resource" "sync_gitlab_and_github" {
+  depends_on = [gitlab_project.gitlab_repository]
   count = var.github_mirror_name != "" ? 1 : 0
 
-  name        = var.github_mirror_name
-  visibility  = "private"
-  auto_init   = true
+  provisioner "local-exec" {
+    command = "bash ${path.module}/scripts/sync_gitlab_and_github.sh ${local.github_username} ${var.github_mirror_name} ${local.gitlab_clone_url} ${local.github_clone_url}"
+    environment = {
+      GITHUB_TOKEN = local.github_token
+    }
+  }
 
-  lifecycle {
-    prevent_destroy = true
+  triggers = {
+    gitlab_repo_id = gitlab_project.gitlab_repository.id
   }
 }
 
 resource "gitlab_project_mirror" "repository-mirror" {
-  count = var.github_mirror_name != "" ? 1 : 0
+  depends_on = [null_resource.sync_gitlab_and_github]
 
   project = gitlab_project.gitlab_repository.id
   url = local.github_clone_url
@@ -45,30 +49,6 @@ resource "gitlab_project_mirror" "repository-mirror" {
     ]
   }
 }
-
-/*
- * Script to either restore data from github or initially push to github
- */
-resource "null_resource" "sync_git_repos" {
-  provisioner "local-exec" {
-    command = "bash ${path.module}/scripts/sync_repos.sh ${var.github_mirror_name} ${local.gitlab_clone_url} ${local.github_clone_url} ${path.module}/.github_status.json"
-    environment = {
-      GITHUB_TOKEN = local.github_token
-      GITLAB_TOKEN = local.gitlab_token
-    }
-  }
-
-  triggers = {
-    github_repo_id = github_repository.github_repository[0].node_id
-  }
-
-  depends_on = [
-    gitlab_project.gitlab_repository,
-    github_repository.github_repository,
-    data.external.github_status
-  ]
-}
-
 
 /*
  * Resources for renovate
@@ -92,4 +72,20 @@ resource "gitlab_project_hook" "renovatehook" {
   push_events = false
   issues_events = true
   enable_ssl_verification = false
+}
+
+/*
+ * Pipeline variables
+ */
+resource "gitlab_project_variable" "ci_variables" {
+  for_each = {
+    for v in var.ci_variables : v.key => v
+  }
+
+  project = gitlab_project.gitlab_repository.id
+  key = each.value.key
+  value = each.value.value
+  protected = true
+  masked = each.value.sensitive
+  hidden = each.value.sensitive
 }
